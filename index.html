@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D Dungeon Generator</title>
+  <title>Dungeon Game</title>
   <style>
     * {
       margin: 0;
@@ -13,495 +13,496 @@
     
     body {
       font-family: 'Arial', sans-serif;
-      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
-      color: #fff;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       min-height: 100vh;
+      color: #fff;
+    }
+    
+    .game-container {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      gap: 20px;
+      background: #0a0a0a;
       padding: 20px;
+      border: 3px solid #ffaa00;
+      border-radius: 10px;
+      box-shadow: 0 0 30px rgba(255, 170, 0, 0.3);
     }
     
     h1 {
-      font-size: 2.5em;
-      margin-bottom: 20px;
-      text-shadow: 0 0 20px #ff6600;
-      color: #ffaa00;
-      letter-spacing: 2px;
-    }
-    
-    .container {
-      background: rgba(15, 15, 30, 0.9);
-      border: 3px solid #ffaa00;
-      border-radius: 15px;
-      padding: 30px;
-      max-width: 1200px;
-      box-shadow: 0 0 30px rgba(255, 170, 0, 0.4);
-      backdrop-filter: blur(10px);
-    }
-    
-    .controls {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 30px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    
-    button {
-      padding: 15px 35px;
-      font-size: 16px;
-      background: linear-gradient(135deg, #ffaa00, #ff8800);
-      color: #000;
-      border: 2px solid #ff6600;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: all 0.3s;
-      box-shadow: 0 0 15px rgba(255, 170, 0, 0.6);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    
-    button:hover {
-      background: linear-gradient(135deg, #ff9900, #ff7700);
-      transform: scale(1.08);
-      box-shadow: 0 0 25px rgba(255, 170, 0, 0.9);
-    }
-    
-    button:active {
-      transform: scale(0.95);
-    }
-    
-    .dungeon-view {
-      background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
-      border: 3px solid #666;
-      border-radius: 10px;
-      overflow: hidden;
-      margin: 20px 0;
-      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
-    }
-    
-    .dungeon-grid {
-      display: grid;
-      gap: 0;
-      padding: 0;
-      background: #000;
-    }
-    
-    .tile {
-      aspect-ratio: 1;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
-      cursor: pointer;
-      background-size: cover;
-      background-position: center;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    
-    .tile:hover {
-      transform: scale(1.05);
-      z-index: 10;
-      box-shadow: 0 0 15px rgba(255, 170, 0, 0.6);
-    }
-    
-    /* Duvar - Stone texture */
-    .tile.wall {
-      background: 
-        repeating-linear-gradient(90deg, #2a2a2a, #2a2a2a 2px, #1a1a1a 2px, #1a1a1a 4px),
-        repeating-linear-gradient(0deg, #333, #333 2px, #222 2px, #222 4px);
-      background-color: #262626;
-      color: #666;
-    }
-    
-    .tile.wall::before {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background: 
-        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.1), transparent),
-        radial-gradient(circle at 70% 80%, rgba(0,0,0,0.3), transparent);
-    }
-    
-    /* Oda - Ahşap zemin */
-    .tile.room {
-      background: 
-        repeating-linear-gradient(90deg, 
-          #8b6f47 0px, 
-          #9d7e52 2px, 
-          #7d6842 4px, 
-          #8b6f47 6px);
-      background-color: #8b6f47;
-      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
-    }
-    
-    .tile.room::after {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background: 
-        radial-gradient(ellipse at 30% 40%, rgba(255,255,255,0.1), transparent),
-        radial-gradient(ellipse at 70% 60%, rgba(0,0,0,0.15), transparent);
-    }
-    
-    /* Koridor - Taş döşeme */
-    .tile.corridor {
-      background: 
-        linear-gradient(45deg, #555 25%, transparent 25%) 0 0,
-        linear-gradient(-45deg, #555 25%, transparent 25%) 0 0,
-        linear-gradient(45deg, transparent 75%, #555 75%) 0 0,
-        linear-gradient(-45deg, transparent 75%, #555 75%) 0 0;
-      background-size: 4px 4px;
-      background-color: #444;
-      background-position: 0 0, 2px 0, 2px -2px, 0 -2px;
-    }
-    
-    /* Zemin - Kirli taş */
-    .tile.floor {
-      background: 
-        radial-gradient(circle at 20% 30%, #666, transparent 50%),
-        radial-gradient(circle at 70% 80%, #444, transparent 50%);
-      background-color: #555;
-    }
-    
-    /* Giriş - Parlak portal */
-    .tile.entry {
-      background: radial-gradient(circle at 30% 30%, #ffff00, #ffaa00, #ff6600);
-      box-shadow: inset 0 0 20px #ffff00, 0 0 30px #ff8800;
-      animation: portal 2s infinite;
-    }
-    
-    .tile.entry::before {
-      content: '';
-      position: absolute;
-      width: 80%;
-      height: 80%;
-      border: 2px solid #fff;
-      border-radius: 50%;
-      animation: portal-spin 3s linear infinite;
-    }
-    
-    @keyframes portal {
-      0%, 100% { 
-        background: radial-gradient(circle at 30% 30%, #ffff00, #ffaa00, #ff6600);
-        box-shadow: inset 0 0 20px #ffff00, 0 0 30px #ff8800;
-      }
-      50% { 
-        background: radial-gradient(circle at 70% 70%, #ffff00, #ffaa00, #ff6600);
-        box-shadow: inset 0 0 25px #ffff00, 0 0 40px #ffaa00;
-      }
-    }
-    
-    @keyframes portal-spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    /* Kontrol paneli */
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 15px;
-      margin: 20px 0;
-      padding: 15px;
-      background: rgba(255, 170, 0, 0.1);
-      border: 1px solid #ffaa00;
-      border-radius: 8px;
-    }
-    
-    .stat-item {
       text-align: center;
-      padding: 10px;
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 5px;
-      border-left: 3px solid #ffaa00;
+      color: #ffaa00;
+      text-shadow: 0 0 10px #ffaa00;
+      margin-bottom: 10px;
     }
     
-    .stat-label {
+    .hud {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 15px;
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid #ffaa00;
+      border-radius: 5px;
+    }
+    
+    .hud-item {
+      text-align: center;
+    }
+    
+    .hud-label {
       font-size: 12px;
       color: #888;
       text-transform: uppercase;
       letter-spacing: 1px;
+      margin-bottom: 5px;
     }
     
-    .stat-value {
+    .hud-value {
       font-size: 20px;
       color: #ffaa00;
       font-weight: bold;
+    }
+    
+    .hp-bar {
+      width: 100%;
+      height: 20px;
+      background: #333;
+      border: 1px solid #666;
+      border-radius: 3px;
+      overflow: hidden;
       margin-top: 5px;
     }
     
+    .hp-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+      width: 100%;
+      transition: width 0.3s;
+    }
+    
+    canvas {
+      background: #000;
+      border: 2px solid #666;
+      display: block;
+      margin: 0 auto;
+    }
+    
+    .controls {
+      text-align: center;
+      font-size: 12px;
+      color: #888;
+      padding: 10px;
+      background: rgba(255, 170, 0, 0.1);
+      border: 1px solid #ffaa00;
+      border-radius: 5px;
+    }
+    
     .legend {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 12px;
-      margin-top: 20px;
-      padding: 15px;
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      flex-wrap: wrap;
+      padding: 10px;
       background: rgba(0, 0, 0, 0.5);
       border: 1px solid #666;
-      border-radius: 8px;
+      border-radius: 5px;
+      font-size: 13px;
     }
     
     .legend-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 13px;
+      gap: 8px;
     }
     
     .legend-symbol {
-      width: 35px;
-      height: 35px;
+      width: 25px;
+      height: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      border: 1px solid #666;
       border-radius: 3px;
-      flex-shrink: 0;
     }
     
-    .legend-wall .legend-symbol {
-      background: #262626;
-      border: 1px solid #444;
-      background-image: 
-        repeating-linear-gradient(90deg, #2a2a2a, #2a2a2a 2px, #1a1a1a 2px, #1a1a1a 4px);
-    }
+    .symbol-player { background: #ffaa00; color: #000; }
+    .symbol-enemy { background: #ff3333; color: #fff; }
+    .symbol-treasure { background: #ffff00; color: #000; }
     
-    .legend-room .legend-symbol {
-      background: #8b6f47;
-      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
-    }
-    
-    .legend-corridor .legend-symbol {
-      background: 
-        linear-gradient(45deg, #555 25%, transparent 25%) 0 0,
-        linear-gradient(-45deg, #555 25%, transparent 25%) 0 0;
-      background-size: 4px 4px;
-      background-color: #444;
-    }
-    
-    .legend-floor .legend-symbol {
-      background: #555;
-    }
-    
-    .legend-entry .legend-symbol {
-      background: radial-gradient(circle at 30% 30%, #ffff00, #ffaa00, #ff6600);
-      box-shadow: inset 0 0 10px #ffff00;
-    }
-    
-    .info {
+    .game-over {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.95);
+      padding: 40px;
+      border: 3px solid #ffaa00;
+      border-radius: 10px;
       text-align: center;
-      margin-top: 20px;
-      font-size: 13px;
-      color: #888;
-      letter-spacing: 0.5px;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 0 30px rgba(255, 170, 0, 0.8);
+    }
+    
+    .game-over.show {
+      display: block;
+    }
+    
+    .game-over h2 {
+      font-size: 40px;
+      margin-bottom: 20px;
+      color: #ffaa00;
+      text-shadow: 0 0 10px #ffaa00;
+    }
+    
+    .game-over p {
+      font-size: 20px;
+      margin-bottom: 30px;
+      color: #fff;
+    }
+    
+    .game-over button {
+      padding: 15px 40px;
+      font-size: 16px;
+      background: #ffaa00;
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    
+    .game-over button:hover {
+      background: #ff9900;
+      transform: scale(1.05);
     }
   </style>
 </head>
 <body>
-  <h1>⚔️ DUNGEON GENERATOR ⚔️</h1>
-  
-  <div class="container">
+  <div class="game-container">
+    <h1>⚔️ DUNGEON GAME ⚔️</h1>
+    
+    <div class="hud">
+      <div class="hud-item">
+        <div class="hud-label">HP</div>
+        <div class="hp-bar">
+          <div class="hp-fill" id="hpFill"></div>
+        </div>
+        <div class="hud-value" id="hpValue">100/100</div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-label">Skor</div>
+        <div class="hud-value" id="scoreValue">0</div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-label">Düşmanlar</div>
+        <div class="hud-value" id="enemyCount">5</div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-label">Level</div>
+        <div class="hud-value" id="levelValue">1</div>
+      </div>
+    </div>
+    
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
     <div class="controls">
-      <button onclick="generateMap()">🎲 YENİ DUNGEON OLUŞTUR</button>
-      <button onclick="generateMap()">🔄 YENILE</button>
-    </div>
-    
-    <div class="dungeon-view">
-      <div class="dungeon-grid" id="dungeonGrid" style="grid-template-columns: repeat(50, 1fr);"></div>
-    </div>
-    
-    <div class="stats">
-      <div class="stat-item">
-        <div class="stat-label">Odalar</div>
-        <div class="stat-value" id="roomCount">0</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Koridorlar</div>
-        <div class="stat-value" id="corridorCount">0</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Toplam Alan</div>
-        <div class="stat-value" id="totalArea">0%</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Zorluk</div>
-        <div class="stat-value" id="difficulty">Normal</div>
-      </div>
+      <strong>KONTROLLER:</strong><br>
+      ⬅️➡️⬆️⬇️ veya WASD = Hareket | SPACE = Saldır
     </div>
     
     <div class="legend">
-      <div class="legend-item legend-wall">
-        <div class="legend-symbol"></div>
-        <div>Duvar</div>
+      <div class="legend-item">
+        <div class="legend-symbol symbol-player">@</div>
+        <div>Oyuncu</div>
       </div>
-      <div class="legend-item legend-room">
-        <div class="legend-symbol"></div>
-        <div>Oda</div>
+      <div class="legend-item">
+        <div class="legend-symbol symbol-enemy">E</div>
+        <div>Düşman</div>
       </div>
-      <div class="legend-item legend-corridor">
-        <div class="legend-symbol"></div>
-        <div>Koridor</div>
+      <div class="legend-item">
+        <div class="legend-symbol symbol-treasure">G</div>
+        <div>Hazine</div>
       </div>
-      <div class="legend-item legend-floor">
-        <div class="legend-symbol"></div>
-        <div>Zemin</div>
-      </div>
-      <div class="legend-item legend-entry">
-        <div class="legend-symbol"></div>
-        <div>Giriş Portal</div>
-      </div>
-    </div>
-    
-    <div class="info">
-      <p>Harita boyutu: 50x30 | Gerçek görsellerle tasarlanmış dungeon</p>
     </div>
   </div>
 
+  <div class="game-over" id="gameOverModal">
+    <h2 id="gameOverTitle">GAME OVER</h2>
+    <p id="gameOverText">Skor: 0</p>
+    <button onclick="location.reload()">OYUNU YENİDEN BAŞLAT</button>
+  </div>
+
   <script>
-    // Basit Random Generator
-    function Random(seed) {
-      return {
-        seed: seed,
-        next() {
-          this.seed = (this.seed * 9301 + 49297) % 233280;
-          return this.seed / 233280;
-        },
-        range(min, max) {
-          return Math.floor(this.next() * (max - min)) + min;
-        }
-      };
-    }
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-    // Harita oluştur
-    function generateMap() {
-      const width = 50;
-      const height = 30;
-      
-      // Haritayı duvarlarla doldur
-      let map = [];
-      for (let y = 0; y < height; y++) {
-        map[y] = [];
-        for (let x = 0; x < width; x++) {
-          map[y][x] = 'wall';
-        }
-      }
+    // Oyun değişkenleri
+    const tileSize = 30;
+    const mapWidth = Math.floor(canvas.width / tileSize);
+    const mapHeight = Math.floor(canvas.height / tileSize);
 
-      // Random generator
-      const rng = Random(Date.now());
+    let gameState = {
+      isRunning: true,
+      score: 0,
+      level: 1,
+      treasuresCollected: 0
+    };
 
-      // İstatistikler
-      let stats = {
-        rooms: 0,
-        corridors: 0,
-        totalFloor: 0
-      };
+    // Oyuncu
+    let player = {
+      x: 10,
+      y: 10,
+      hp: 100,
+      maxHp: 100,
+      attackRange: 50,
+      damage: 20,
+      moveSpeed: 1
+    };
 
-      // Rastgele odalar oluştur
-      const roomCount = rng.range(8, 15);
-      const rooms = [];
-
-      for (let i = 0; i < roomCount; i++) {
-        const roomWidth = rng.range(8, 16);
-        const roomHeight = rng.range(6, 12);
-        const roomX = rng.range(2, width - roomWidth - 2);
-        const roomY = rng.range(2, height - roomHeight - 2);
-
-        rooms.push({
-          x: roomX,
-          y: roomY,
-          width: roomWidth,
-          height: roomHeight
+    // Düşmanlar
+    let enemies = [];
+    function initEnemies() {
+      enemies = [];
+      const enemyCount = 3 + gameState.level;
+      for (let i = 0; i < enemyCount; i++) {
+        enemies.push({
+          x: Math.random() * (mapWidth - 4) + 2,
+          y: Math.random() * (mapHeight - 4) + 2,
+          hp: 30,
+          maxHp: 30,
+          damage: 10,
+          moveSpeed: 0.5 + gameState.level * 0.1,
+          attackRange: 40
         });
-
-        // Odayı haritaya çiz
-        for (let y = roomY; y < roomY + roomHeight; y++) {
-          for (let x = roomX; x < roomX + roomWidth; x++) {
-            map[y][x] = 'room';
-            stats.totalFloor++;
-          }
-        }
-        stats.rooms++;
       }
-
-      // Odaları birbirine bağla (koridorlar)
-      for (let i = 0; i < rooms.length - 1; i++) {
-        const room1 = rooms[i];
-        const room2 = rooms[i + 1];
-
-        const x1 = Math.floor(room1.x + room1.width / 2);
-        const y1 = Math.floor(room1.y + room1.height / 2);
-        const x2 = Math.floor(room2.x + room2.width / 2);
-        const y2 = Math.floor(room2.y + room2.height / 2);
-
-        // Yatay çizgi
-        const startX = Math.min(x1, x2);
-        const endX = Math.max(x1, x2);
-        for (let x = startX; x <= endX; x++) {
-          if (map[y1][x] === 'wall') {
-            map[y1][x] = 'corridor';
-            stats.totalFloor++;
-          }
-        }
-
-        // Dikey çizgi
-        const startY = Math.min(y1, y2);
-        const endY = Math.max(y1, y2);
-        for (let y = startY; y <= endY; y++) {
-          if (map[y][x2] === 'wall') {
-            map[y][x2] = 'corridor';
-            stats.totalFloor++;
-          }
-        }
-        stats.corridors++;
-      }
-
-      // Zemin ekle
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          if (map[y][x] === 'wall' && rng.next() < 0.2) {
-            map[y][x] = 'floor';
-            stats.totalFloor++;
-          }
-        }
-      }
-
-      // Giriş noktası ekle
-      if (rooms.length > 0) {
-        const firstRoom = rooms[0];
-        const entryX = Math.floor(firstRoom.x + firstRoom.width / 2);
-        const entryY = Math.floor(firstRoom.y + firstRoom.height / 2);
-        map[entryY][entryX] = 'entry';
-      }
-
-      // Haritayı ekrana yazdır
-      const dungeonGrid = document.getElementById('dungeonGrid');
-      dungeonGrid.innerHTML = '';
-      
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          const tile = document.createElement('div');
-          tile.className = 'tile ' + map[y][x];
-          dungeonGrid.appendChild(tile);
-        }
-      }
-
-      // İstatistikleri güncelle
-      const totalTiles = width * height;
-      const floorPercentage = Math.round((stats.totalFloor / totalTiles) * 100);
-      const difficulty = floorPercentage > 60 ? 'Kolay' : floorPercentage > 40 ? 'Normal' : 'Zor';
-
-      document.getElementById('roomCount').textContent = stats.rooms;
-      document.getElementById('corridorCount').textContent = stats.corridors;
-      document.getElementById('totalArea').textContent = floorPercentage + '%';
-      document.getElementById('difficulty').textContent = difficulty;
     }
 
-    // Sayfa yüklendiğinde ilk haritayı oluştur
-    window.addEventListener('load', generateMap);
+    // Hazineler
+    let treasures = [];
+    function initTreasures() {
+      treasures = [];
+      const treasureCount = 1 + gameState.level;
+      for (let i = 0; i < treasureCount; i++) {
+        treasures.push({
+          x: Math.random() * (mapWidth - 4) + 2,
+          y: Math.random() * (mapHeight - 4) + 2,
+          collected: false
+        });
+      }
+    }
+
+    // Girdi sistemi
+    const keys = {};
+    window.addEventListener('keydown', (e) => {
+      keys[e.key.toLowerCase()] = true;
+      if (e.key === ' ') {
+        e.preventDefault();
+        playerAttack();
+      }
+    });
+    window.addEventListener('keyup', (e) => {
+      keys[e.key.toLowerCase()] = false;
+    });
+
+    // Oyuncu hareketi
+    function updatePlayer() {
+      let newX = player.x;
+      let newY = player.y;
+
+      if (keys['w'] || keys['arrowup']) newY -= player.moveSpeed;
+      if (keys['s'] || keys['arrowdown']) newY += player.moveSpeed;
+      if (keys['a'] || keys['arrowleft']) newX -= player.moveSpeed;
+      if (keys['d'] || keys['arrowright']) newX += player.moveSpeed;
+
+      // Sınırlar
+      newX = Math.max(0, Math.min(mapWidth - 1, newX));
+      newY = Math.max(0, Math.min(mapHeight - 1, newY));
+
+      player.x = newX;
+      player.y = newY;
+    }
+
+    // Düşman hareketi
+    function updateEnemies() {
+      enemies.forEach((enemy, index) => {
+        if (enemy.hp <= 0) {
+          enemies.splice(index, 1);
+          gameState.score += 50;
+          return;
+        }
+
+        // Oyuncuya doğru hareket et
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > 0.5) {
+          enemy.x += (dx / distance) * enemy.moveSpeed;
+          enemy.y += (dy / distance) * enemy.moveSpeed;
+        }
+
+        // Oyuncuya saldır
+        if (distance < 1.5) {
+          player.hp -= enemy.damage * 0.016; // Delta time
+          if (player.hp < 0) player.hp = 0;
+        }
+      });
+    }
+
+    // Hazine koleksiyon
+    function checkTreasures() {
+      treasures.forEach((treasure) => {
+        if (!treasure.collected) {
+          const dx = player.x - treasure.x;
+          const dy = player.y - treasure.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < 1) {
+            treasure.collected = true;
+            gameState.score += 100;
+            gameState.treasuresCollected++;
+
+            // Yeni level
+            if (gameState.treasuresCollected % 2 === 0) {
+              gameState.level++;
+              initEnemies();
+              initTreasures();
+            }
+          }
+        }
+      });
+    }
+
+    // Oyuncu saldırısı
+    function playerAttack() {
+      enemies.forEach((enemy) => {
+        const dx = player.x - enemy.x;
+        const dy = player.y - enemy.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < player.attackRange / tileSize) {
+          enemy.hp -= player.damage;
+          if (enemy.hp < 0) enemy.hp = 0;
+        }
+      });
+    }
+
+    // Çizim
+    function draw() {
+      // Arka plan
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Grid
+      ctx.strokeStyle = '#1a1a1a';
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i <= mapWidth; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * tileSize, 0);
+        ctx.lineTo(i * tileSize, canvas.height);
+        ctx.stroke();
+      }
+      for (let i = 0; i <= mapHeight; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, i * tileSize);
+        ctx.lineTo(canvas.width, i * tileSize);
+        ctx.stroke();
+      }
+
+      // Oyuncu çiz
+      ctx.fillStyle = '#ffaa00';
+      ctx.fillRect(player.x * tileSize + 5, player.y * tileSize + 5, tileSize - 10, tileSize - 10);
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('@', player.x * tileSize + tileSize / 2, player.y * tileSize + tileSize / 2);
+
+      // Düşmanları çiz
+      enemies.forEach((enemy) => {
+        // HP bar
+        const barWidth = tileSize - 10;
+        const barHeight = 3;
+        ctx.fillStyle = '#333';
+        ctx.fillRect(enemy.x * tileSize + 5, enemy.y * tileSize + 2, barWidth, barHeight);
+        ctx.fillStyle = '#ff3333';
+        ctx.fillRect(enemy.x * tileSize + 5, enemy.y * tileSize + 2, barWidth * (enemy.hp / enemy.maxHp), barHeight);
+
+        // Düşman
+        ctx.fillStyle = '#ff3333';
+        ctx.fillRect(enemy.x * tileSize + 5, enemy.y * tileSize + 5, tileSize - 10, tileSize - 10);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 16px Arial';
+        ctx.fillText('E', enemy.x * tileSize + tileSize / 2, enemy.y * tileSize + tileSize / 2);
+      });
+
+      // Hazineleri çiz
+      treasures.forEach((treasure) => {
+        if (!treasure.collected) {
+          ctx.fillStyle = '#ffff00';
+          ctx.fillRect(treasure.x * tileSize + 8, treasure.y * tileSize + 8, tileSize - 16, tileSize - 16);
+          ctx.fillStyle = '#000';
+          ctx.font = 'bold 14px Arial';
+          ctx.fillText('G', treasure.x * tileSize + tileSize / 2, treasure.y * tileSize + tileSize / 2);
+        }
+      });
+
+      // Saldırı alanı göster (opsiyonel)
+      ctx.strokeStyle = 'rgba(255, 170, 0, 0.2)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(player.x * tileSize + tileSize / 2, player.y * tileSize + tileSize / 2, player.attackRange, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // HUD güncelle
+    function updateHUD() {
+      document.getElementById('hpValue').textContent = `${Math.ceil(player.hp)}/${player.maxHp}`;
+      document.getElementById('hpFill').style.width = (player.hp / player.maxHp) * 100 + '%';
+      document.getElementById('scoreValue').textContent = gameState.score;
+      document.getElementById('enemyCount').textContent = enemies.length;
+      document.getElementById('levelValue').textContent = gameState.level;
+    }
+
+    // Oyun döngüsü
+    function gameLoop() {
+      if (!gameState.isRunning) {
+        return;
+      }
+
+      // Güncelle
+      updatePlayer();
+      updateEnemies();
+      checkTreasures();
+      updateHUD();
+
+      // Çiz
+      draw();
+
+      // Oyun bitti kontrol
+      if (player.hp <= 0) {
+        gameState.isRunning = false;
+        document.getElementById('gameOverTitle').textContent = 'ÖLDÜN!';
+        document.getElementById('gameOverText').textContent = `Final Skor: ${gameState.score} | Level: ${gameState.level}`;
+        document.getElementById('gameOverModal').classList.add('show');
+        return;
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Başlat
+    initEnemies();
+    initTreasures();
+    gameLoop();
   </script>
 </body>
 </html>
