@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2D Infinite Dungeon Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.5;
+      background-color: #222;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    pre {
+      font-family: monospace;
+      background: #333;
+      padding: 10px;
+      border-radius: 5px;
+      overflow: auto;
+      white-space: pre-wrap;
+      max-width: 800px;
+      max-height: 600px;
+    }
+    .controls {
+      margin-bottom: 20px;
+    }
+    button {
+      font-size: 16px;
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: #fff;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .info {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <h1>2D Infinite Dungeon Generator</h1>
+  <div class="controls">
+    <button onclick="generateAndDisplay()">Generate New Chunk</button>
+  </div>
+  <pre id="output"></pre>
+  <div class="info">
+    <p>Legend: # = Wall, . = Floor, R = Room, + = Corridor, G = Gateway</p>
+  </div>
+
+  <script>
+    // ============================
+    // JavaScript Dungeon Generator
+    // ============================
+
+    // Define TILE TYPES
+    const TILE = {
+      WALL: 0, FLOOR: 1, ROOM: 2, CORRIDOR: 3, GATEWAY: 4
+    };
+
+    function tileToChar(tile) {
+      switch (tile) {
+        case TILE.WALL: return "#";
+        case TILE.FLOOR: return ".";
+        case TILE.ROOM: return "R";
+        case TILE.CORRIDOR: return "+";
+        case TILE.GATEWAY: return "G";
+        default: return "?";
+      }
+    }
+
+    const DEFAULT_PARAMS = {
+      chunkWidth: 64, 
+      chunkHeight: 64, 
+      globalSeed: 987654321,
+      initialWallDensity: 0.45, 
+      caIterations: 5, 
+      roomChance: 0.8, 
+      corridorWidth: 2,
+    };
+
+    // Simple pseudo-random number generator (seeded)
+    class SeededRandom {
+      constructor(seed) {
+        this.seed = seed;
+      }
+
+      next() {
+        this.seed = (this.seed * 9301 + 49297) % 233280;
+        return this.seed / 233280;
+      }
+
+      range(min, max) {
+        return min + Math.floor(this.next() * (max - min));
+      }
+    }
+
+    // 2D tilemap
+    class Tilemap {
+      constructor(width, height) {
+        this.width = width;
+        this.height = height;
+        this.tiles = Array(width * height).fill(TILE.WALL);
+      }
+
+      get(x, y) {
+        if (x < 0 || x >= this.width || y < 0 || y >= this.height) return TILE.WALL;
+        return this.tiles[y * this.width + x];
+      }
+
+      set(x, y, tile) {
+        if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
+          this.tiles[y * this.width + x] = tile;
+        }
+      }
+
+      countNeighbors(x, y, tileType) {
+        let count = 0;
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            if (dx === 0 && dy === 0) continue;
+            if (this.get(x + dx, y + dy) === tileType) count++;
+          }
+        }
+        return count;
+      }
+    }
+
+    // Cellular automata iteration
+    function cellularAutomataStep(tilemap) {
+      const newTilemap = new Tilemap(tilemap.width, tilemap.height);
+      
+      for (let y = 0; y < tilemap.height; y++) {
+        for (let x = 0; x < tilemap.width; x++) {
+          const neighbors = tilemap.countNeighbors(x, y, TILE.FLOOR);
+          
+          if (tilemap.get(x, y) === TILE.FLOOR) {
+            newTilemap.set(x, y, neighbors >= 4 ? TILE.FLOOR : TILE.WALL);
+          } else {
+            newTilemap.set(x, y, neighbors >= 5 ? TILE.FLOOR : TILE.WALL);
+          }
+        }
+      }
+      
+      return newTilemap;
+    }
+
+    // Room generation
+    function generateRoom(tilemap, x, y, width, height, rng) {
+      for (let dy = 0; dy < height; dy++) {
+        for (let dx = 0; dx < width; dx++) {
+          tilemap.set(x + dx, y + dy, TILE.ROOM);
+        }
+      }
+    }
+
+    // Corridor generation
+    function generateCorridor(tilemap, x1, y1, x2, y2, width) {
+      const dx = x2 > x1 ? 1 : -1;
+      const dy = y2 > y1 ? 1 : -1;
+
+      let x = x1;
+      let y = y1;
+
+      while (x !== x2) {
+        for (let w = 0; w < width; w++) {
+          tilemap.set(x, y + w, TILE.CORRIDOR);
+        }
+        x += dx;
+      }
+
+      while (y !== y2) {
+        for (let w = 0; w < width; w++) {
+          tilemap.set(x + w, y, TILE.CORRIDOR);
+        }
+        y += dy;
+      }
+    }
+
+    // Main chunk generation
+    function generateChunk(chunkX, chunkY, params) {
+      const rng = new SeededRandom(params.globalSeed + chunkX * 73856093 ^ chunkY * 19349663);
+      const tilemap = new Tilemap(params.chunkWidth, params.chunkHeight);
+
+      // Initialize with walls and random floors
+      for (let y = 0; y < tilemap.height; y++) {
+        for (let x = 0; x < tilemap.width; x++) {
+          tilemap.set(x, y, rng.next() < params.initialWallDensity ? TILE.FLOOR : TILE.WALL);
+        }
+      }
+
+      // Apply cellular automata
+      for (let i = 0; i < params.caIterations; i++) {
+        tilemap.tilemap = tilemap;
+      }
+
+      // Generate some rooms
+      for (let i = 0; i < 5; i++) {
+        if (rng.next() < params.roomChance) {
+          const roomWidth = rng.range(6, 12);
+          const roomHeight = rng.range(6, 12);
+          const roomX = rng.range(1, tilemap.width - roomWidth - 1);
+          const roomY = rng.range(1, tilemap.height - roomHeight - 1);
+          generateRoom(tilemap, roomX, roomY, roomWidth, roomHeight, rng);
+        }
+      }
+
+      return { tilemap, chunkX, chunkY };
+    }
+
+    function printChunk(chunk) {
+      const map = chunk.tilemap;
+      let output = "";
+      for (let y = 0; y < map.height; y++) {
+        let row = "";
+        for (let x = 0; x < map.width; x++) {
+          row += tileToChar(map.get(x, y));
+        }
+        output += row + "\n";
+      }
+      return output;
+    }
+
+    function generateAndDisplay() {
+      const chunk = generateChunk(0, 0, DEFAULT_PARAMS);
+      document.getElementById('output').textContent = printChunk(chunk);
+    }
+
+    // Generate initial dungeon on page load
+    window.onload = function() {
+      generateAndDisplay();
+    };
+  </script>
+</body>
+</html>
