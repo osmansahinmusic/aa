@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dungeon Generator</title>
+  <title>3D Dungeon Generator</title>
   <style>
     * {
       margin: 0;
@@ -13,7 +13,7 @@
     
     body {
       font-family: 'Arial', sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
       color: #fff;
       min-height: 100vh;
       display: flex;
@@ -26,199 +26,310 @@
     h1 {
       font-size: 2.5em;
       margin-bottom: 20px;
-      text-shadow: 0 0 10px #ff6600;
+      text-shadow: 0 0 20px #ff6600;
       color: #ffaa00;
+      letter-spacing: 2px;
     }
     
     .container {
-      background: #0f0f1e;
+      background: rgba(15, 15, 30, 0.9);
       border: 3px solid #ffaa00;
-      border-radius: 10px;
+      border-radius: 15px;
       padding: 30px;
-      max-width: 1000px;
-      box-shadow: 0 0 20px rgba(255, 170, 0, 0.3);
+      max-width: 1200px;
+      box-shadow: 0 0 30px rgba(255, 170, 0, 0.4);
+      backdrop-filter: blur(10px);
     }
     
     .controls {
       display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
+      gap: 15px;
+      margin-bottom: 30px;
       justify-content: center;
       flex-wrap: wrap;
     }
     
     button {
-      padding: 12px 30px;
+      padding: 15px 35px;
       font-size: 16px;
-      background: #ffaa00;
+      background: linear-gradient(135deg, #ffaa00, #ff8800);
       color: #000;
-      border: none;
-      border-radius: 5px;
+      border: 2px solid #ff6600;
+      border-radius: 8px;
       cursor: pointer;
       font-weight: bold;
       transition: all 0.3s;
-      box-shadow: 0 0 10px rgba(255, 170, 0, 0.5);
+      box-shadow: 0 0 15px rgba(255, 170, 0, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
     
     button:hover {
-      background: #ff9900;
-      transform: scale(1.05);
-      box-shadow: 0 0 20px rgba(255, 170, 0, 0.8);
+      background: linear-gradient(135deg, #ff9900, #ff7700);
+      transform: scale(1.08);
+      box-shadow: 0 0 25px rgba(255, 170, 0, 0.9);
     }
     
     button:active {
       transform: scale(0.95);
     }
     
-    .map-container {
-      background: #000;
-      border: 2px solid #ffaa00;
-      padding: 15px;
-      border-radius: 5px;
-      overflow: auto;
-      max-height: 600px;
+    .dungeon-view {
+      background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+      border: 3px solid #666;
+      border-radius: 10px;
+      overflow: hidden;
       margin: 20px 0;
-      display: inline-block;
-      margin-left: auto;
-      margin-right: auto;
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
     }
     
-    .map {
+    .dungeon-grid {
       display: grid;
-      grid-template-columns: repeat(50, 1fr);
-      gap: 1px;
+      gap: 0;
+      padding: 0;
       background: #000;
-      padding: 10px;
     }
     
     .tile {
-      width: 18px;
-      height: 18px;
+      aspect-ratio: 1;
+      position: relative;
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
-      font-weight: bold;
-      border-radius: 2px;
-      transition: all 0.1s;
-    }
-    
-    .tile.wall {
-      background: #333;
-      color: #666;
-      border: 1px solid #444;
-    }
-    
-    .tile.room {
-      background: #4a90e2;
-      color: #000;
-      border: 1px solid #2e5c8a;
-    }
-    
-    .tile.corridor {
-      background: #8b7355;
-      color: #fff;
-      border: 1px solid #5d4e37;
-    }
-    
-    .tile.floor {
-      background: #555;
-      color: #888;
-      border: 1px solid #666;
-    }
-    
-    .tile.entry {
-      background: #ffaa00;
-      color: #000;
-      border: 1px solid #ff8800;
-      box-shadow: 0 0 5px #ffaa00;
+      transition: all 0.2s;
+      cursor: pointer;
+      background-size: cover;
+      background-position: center;
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
     
     .tile:hover {
-      transform: scale(1.2);
+      transform: scale(1.05);
       z-index: 10;
-      box-shadow: 0 0 10px rgba(255, 170, 0, 0.8);
+      box-shadow: 0 0 15px rgba(255, 170, 0, 0.6);
+    }
+    
+    /* Duvar - Stone texture */
+    .tile.wall {
+      background: 
+        repeating-linear-gradient(90deg, #2a2a2a, #2a2a2a 2px, #1a1a1a 2px, #1a1a1a 4px),
+        repeating-linear-gradient(0deg, #333, #333 2px, #222 2px, #222 4px);
+      background-color: #262626;
+      color: #666;
+    }
+    
+    .tile.wall::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.1), transparent),
+        radial-gradient(circle at 70% 80%, rgba(0,0,0,0.3), transparent);
+    }
+    
+    /* Oda - Ahşap zemin */
+    .tile.room {
+      background: 
+        repeating-linear-gradient(90deg, 
+          #8b6f47 0px, 
+          #9d7e52 2px, 
+          #7d6842 4px, 
+          #8b6f47 6px);
+      background-color: #8b6f47;
+      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+    
+    .tile.room::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(ellipse at 30% 40%, rgba(255,255,255,0.1), transparent),
+        radial-gradient(ellipse at 70% 60%, rgba(0,0,0,0.15), transparent);
+    }
+    
+    /* Koridor - Taş döşeme */
+    .tile.corridor {
+      background: 
+        linear-gradient(45deg, #555 25%, transparent 25%) 0 0,
+        linear-gradient(-45deg, #555 25%, transparent 25%) 0 0,
+        linear-gradient(45deg, transparent 75%, #555 75%) 0 0,
+        linear-gradient(-45deg, transparent 75%, #555 75%) 0 0;
+      background-size: 4px 4px;
+      background-color: #444;
+      background-position: 0 0, 2px 0, 2px -2px, 0 -2px;
+    }
+    
+    /* Zemin - Kirli taş */
+    .tile.floor {
+      background: 
+        radial-gradient(circle at 20% 30%, #666, transparent 50%),
+        radial-gradient(circle at 70% 80%, #444, transparent 50%);
+      background-color: #555;
+    }
+    
+    /* Giriş - Parlak portal */
+    .tile.entry {
+      background: radial-gradient(circle at 30% 30%, #ffff00, #ffaa00, #ff6600);
+      box-shadow: inset 0 0 20px #ffff00, 0 0 30px #ff8800;
+      animation: portal 2s infinite;
+    }
+    
+    .tile.entry::before {
+      content: '';
+      position: absolute;
+      width: 80%;
+      height: 80%;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      animation: portal-spin 3s linear infinite;
+    }
+    
+    @keyframes portal {
+      0%, 100% { 
+        background: radial-gradient(circle at 30% 30%, #ffff00, #ffaa00, #ff6600);
+        box-shadow: inset 0 0 20px #ffff00, 0 0 30px #ff8800;
+      }
+      50% { 
+        background: radial-gradient(circle at 70% 70%, #ffff00, #ffaa00, #ff6600);
+        box-shadow: inset 0 0 25px #ffff00, 0 0 40px #ffaa00;
+      }
+    }
+    
+    @keyframes portal-spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Kontrol paneli */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+      padding: 15px;
+      background: rgba(255, 170, 0, 0.1);
+      border: 1px solid #ffaa00;
+      border-radius: 8px;
+    }
+    
+    .stat-item {
+      text-align: center;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 5px;
+      border-left: 3px solid #ffaa00;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .stat-value {
+      font-size: 20px;
+      color: #ffaa00;
+      font-weight: bold;
+      margin-top: 5px;
     }
     
     .legend {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 15px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
       margin-top: 20px;
       padding: 15px;
-      background: #1a1a2e;
-      border: 1px solid #ffaa00;
-      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid #666;
+      border-radius: 8px;
     }
     
     .legend-item {
-      font-size: 14px;
       display: flex;
       align-items: center;
       gap: 10px;
+      font-size: 13px;
     }
     
     .legend-symbol {
-      font-weight: bold;
-      width: 30px;
-      height: 30px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 35px;
+      height: 35px;
       border-radius: 3px;
+      flex-shrink: 0;
     }
     
     .legend-wall .legend-symbol {
-      background: #333;
-      border: 1px solid #666;
+      background: #262626;
+      border: 1px solid #444;
+      background-image: 
+        repeating-linear-gradient(90deg, #2a2a2a, #2a2a2a 2px, #1a1a1a 2px, #1a1a1a 4px);
     }
     
     .legend-room .legend-symbol {
-      background: #4a90e2;
-      border: 1px solid #2e5c8a;
+      background: #8b6f47;
+      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
     }
     
     .legend-corridor .legend-symbol {
-      background: #8b7355;
-      border: 1px solid #5d4e37;
+      background: 
+        linear-gradient(45deg, #555 25%, transparent 25%) 0 0,
+        linear-gradient(-45deg, #555 25%, transparent 25%) 0 0;
+      background-size: 4px 4px;
+      background-color: #444;
     }
     
     .legend-floor .legend-symbol {
       background: #555;
-      border: 1px solid #666;
     }
     
     .legend-entry .legend-symbol {
-      background: #ffaa00;
-      border: 1px solid #ff8800;
-      box-shadow: 0 0 5px #ffaa00;
+      background: radial-gradient(circle at 30% 30%, #ffff00, #ffaa00, #ff6600);
+      box-shadow: inset 0 0 10px #ffff00;
     }
     
     .info {
       text-align: center;
       margin-top: 20px;
-      font-size: 14px;
-      color: #ffaa00;
-    }
-    
-    .map-wrapper {
-      display: flex;
-      justify-content: center;
+      font-size: 13px;
+      color: #888;
+      letter-spacing: 0.5px;
     }
   </style>
 </head>
 <body>
-  <h1>🏰 DUNGEON GENERATOR</h1>
+  <h1>⚔️ DUNGEON GENERATOR ⚔️</h1>
   
   <div class="container">
     <div class="controls">
-      <button onclick="generateMap()">⚔️ YENİ DUNGEON OLUŞTUR</button>
+      <button onclick="generateMap()">🎲 YENİ DUNGEON OLUŞTUR</button>
       <button onclick="generateMap()">🔄 YENILE</button>
     </div>
     
-    <div class="map-wrapper">
-      <div class="map-container">
-        <div class="map" id="mapOutput">Dungeon oluşturuluyor...</div>
+    <div class="dungeon-view">
+      <div class="dungeon-grid" id="dungeonGrid" style="grid-template-columns: repeat(50, 1fr);"></div>
+    </div>
+    
+    <div class="stats">
+      <div class="stat-item">
+        <div class="stat-label">Odalar</div>
+        <div class="stat-value" id="roomCount">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Koridorlar</div>
+        <div class="stat-value" id="corridorCount">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Toplam Alan</div>
+        <div class="stat-value" id="totalArea">0%</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Zorluk</div>
+        <div class="stat-value" id="difficulty">Normal</div>
       </div>
     </div>
     
@@ -226,10 +337,6 @@
       <div class="legend-item legend-wall">
         <div class="legend-symbol"></div>
         <div>Duvar</div>
-      </div>
-      <div class="legend-item legend-floor">
-        <div class="legend-symbol"></div>
-        <div>Zemin</div>
       </div>
       <div class="legend-item legend-room">
         <div class="legend-symbol"></div>
@@ -239,14 +346,18 @@
         <div class="legend-symbol"></div>
         <div>Koridor</div>
       </div>
+      <div class="legend-item legend-floor">
+        <div class="legend-symbol"></div>
+        <div>Zemin</div>
+      </div>
       <div class="legend-item legend-entry">
-        <div class="legend-symbol">@</div>
-        <div>Giriş Noktası</div>
+        <div class="legend-symbol"></div>
+        <div>Giriş Portal</div>
       </div>
     </div>
     
     <div class="info">
-      <p>Harita boyutu: 50x30 | Tile: 18px</p>
+      <p>Harita boyutu: 50x30 | Gerçek görsellerle tasarlanmış dungeon</p>
     </div>
   </div>
 
@@ -282,13 +393,20 @@
       // Random generator
       const rng = Random(Date.now());
 
+      // İstatistikler
+      let stats = {
+        rooms: 0,
+        corridors: 0,
+        totalFloor: 0
+      };
+
       // Rastgele odalar oluştur
-      const roomCount = rng.range(6, 12);
+      const roomCount = rng.range(8, 15);
       const rooms = [];
 
       for (let i = 0; i < roomCount; i++) {
-        const roomWidth = rng.range(7, 15);
-        const roomHeight = rng.range(5, 11);
+        const roomWidth = rng.range(8, 16);
+        const roomHeight = rng.range(6, 12);
         const roomX = rng.range(2, width - roomWidth - 2);
         const roomY = rng.range(2, height - roomHeight - 2);
 
@@ -303,8 +421,10 @@
         for (let y = roomY; y < roomY + roomHeight; y++) {
           for (let x = roomX; x < roomX + roomWidth; x++) {
             map[y][x] = 'room';
+            stats.totalFloor++;
           }
         }
+        stats.rooms++;
       }
 
       // Odaları birbirine bağla (koridorlar)
@@ -323,6 +443,7 @@
         for (let x = startX; x <= endX; x++) {
           if (map[y1][x] === 'wall') {
             map[y1][x] = 'corridor';
+            stats.totalFloor++;
           }
         }
 
@@ -332,15 +453,18 @@
         for (let y = startY; y <= endY; y++) {
           if (map[y][x2] === 'wall') {
             map[y][x2] = 'corridor';
+            stats.totalFloor++;
           }
         }
+        stats.corridors++;
       }
 
       // Zemin ekle
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
-          if (map[y][x] === 'wall' && rng.next() < 0.25) {
+          if (map[y][x] === 'wall' && rng.next() < 0.2) {
             map[y][x] = 'floor';
+            stats.totalFloor++;
           }
         }
       }
@@ -354,21 +478,26 @@
       }
 
       // Haritayı ekrana yazdır
-      const mapOutput = document.getElementById('mapOutput');
-      mapOutput.innerHTML = '';
+      const dungeonGrid = document.getElementById('dungeonGrid');
+      dungeonGrid.innerHTML = '';
       
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
           const tile = document.createElement('div');
           tile.className = 'tile ' + map[y][x];
-          
-          if (map[y][x] === 'entry') {
-            tile.innerHTML = '@';
-          }
-          
-          mapOutput.appendChild(tile);
+          dungeonGrid.appendChild(tile);
         }
       }
+
+      // İstatistikleri güncelle
+      const totalTiles = width * height;
+      const floorPercentage = Math.round((stats.totalFloor / totalTiles) * 100);
+      const difficulty = floorPercentage > 60 ? 'Kolay' : floorPercentage > 40 ? 'Normal' : 'Zor';
+
+      document.getElementById('roomCount').textContent = stats.rooms;
+      document.getElementById('corridorCount').textContent = stats.corridors;
+      document.getElementById('totalArea').textContent = floorPercentage + '%';
+      document.getElementById('difficulty').textContent = difficulty;
     }
 
     // Sayfa yüklendiğinde ilk haritayı oluştur
