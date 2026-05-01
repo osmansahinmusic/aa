@@ -1,258 +1,290 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2D Infinite Dungeon Generator</title>
+  <title>Dungeon Generator</title>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
     body {
-      font-family: Arial, sans-serif;
-      line-height: 1.5;
-      background-color: #222;
-      color: #fff;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #00ff00;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       padding: 20px;
     }
+    
     h1 {
-      color: #ffaa00;
-    }
-    pre {
-      font-family: 'Courier New', monospace;
-      background: #111;
-      padding: 15px;
-      border: 2px solid #444;
-      border-radius: 5px;
-      overflow: auto;
-      white-space: pre-wrap;
-      max-width: 900px;
-      min-height: 400px;
-      color: #0f0;
-      text-shadow: 0 0 5px #0f0;
-    }
-    .controls {
+      font-size: 2.5em;
       margin-bottom: 20px;
+      text-shadow: 0 0 10px #00ff00;
+      color: #00ff88;
     }
+    
+    .container {
+      background: #0f0f1e;
+      border: 3px solid #00ff00;
+      border-radius: 10px;
+      padding: 30px;
+      max-width: 900px;
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+    }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
     button {
+      padding: 12px 30px;
       font-size: 16px;
-      padding: 12px 24px;
-      margin: 5px;
-      border: 2px solid #007bff;
+      background: #00ff00;
+      color: #000;
+      border: none;
       border-radius: 5px;
       cursor: pointer;
-      background-color: #007bff;
-      color: #fff;
       font-weight: bold;
       transition: all 0.3s;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
     }
+    
     button:hover {
-      background-color: #0056b3;
+      background: #00dd00;
       transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
     }
+    
     button:active {
       transform: scale(0.95);
     }
-    .info {
-      margin-top: 20px;
-      text-align: center;
-      font-size: 14px;
-      color: #aaa;
-      max-width: 900px;
+    
+    .map-container {
+      background: #000;
+      border: 2px solid #00aa00;
+      padding: 15px;
+      border-radius: 5px;
+      overflow: auto;
+      max-height: 600px;
+      margin: 20px 0;
     }
+    
+    .map {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      line-height: 1.2;
+      white-space: pre;
+      color: #00ff00;
+      text-shadow: 0 0 5px #00ff00;
+    }
+    
     .legend {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 10px;
-      margin-top: 10px;
+      margin-top: 20px;
+      padding: 15px;
+      background: #1a1a2e;
+      border: 1px solid #00ff00;
+      border-radius: 5px;
     }
+    
     .legend-item {
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .legend-symbol {
+      font-weight: bold;
+      font-size: 18px;
+      width: 25px;
+      height: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       background: #333;
-      padding: 5px;
       border-radius: 3px;
+    }
+    
+    .info {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #00dd00;
     }
   </style>
 </head>
 <body>
-  <h1>🏰 2D Infinite Dungeon Generator</h1>
-  <div class="controls">
-    <button onclick="generateAndDisplay()">🎲 Generate New Dungeon</button>
-  </div>
-  <pre id="output">Initializing...</pre>
-  <div class="info">
-    <div class="legend">
-      <div class="legend-item"><strong>#</strong> = Wall</div>
-      <div class="legend-item"><strong>.</strong> = Floor</div>
-      <div class="legend-item"><strong>R</strong> = Room</div>
-      <div class="legend-item"><strong>+</strong> = Corridor</div>
-      <div class="legend-item"><strong>G</strong> = Gateway</div>
+  <h1>🏰 DUNGEON GENERATOR</h1>
+  
+  <div class="container">
+    <div class="controls">
+      <button onclick="generateMap()">⚔️ YENİ DUNGEON OLUŞTUR</button>
+      <button onclick="generateMap()">🔄 YENILE</button>
     </div>
-    <p style="margin-top: 15px; color: #888;">Click the button to generate new dungeons!</p>
+    
+    <div class="map-container">
+      <div class="map" id="mapOutput">Dungeon oluşturuluyor...</div>
+    </div>
+    
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-symbol">#</div>
+        <div>Duvar</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-symbol">.</div>
+        <div>Zemin</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-symbol">█</div>
+        <div>Oda</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-symbol">+</div>
+        <div>Koridor</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-symbol">@</div>
+        <div>Giriş</div>
+      </div>
+    </div>
+    
+    <div class="info">
+      <p>Harita boyutu: 50x30</p>
+    </div>
   </div>
 
   <script>
-    console.log("Script starting...");
-
-    // Define TILE TYPES
-    const TILE = {
-      WALL: 0, 
-      FLOOR: 1, 
-      ROOM: 2, 
-      CORRIDOR: 3, 
-      GATEWAY: 4
-    };
-
-    function tileToChar(tile) {
-      switch (tile) {
-        case TILE.WALL: return "#";
-        case TILE.FLOOR: return ".";
-        case TILE.ROOM: return "R";
-        case TILE.CORRIDOR: return "+";
-        case TILE.GATEWAY: return "G";
-        default: return "?";
-      }
-    }
-
-    // Seeded random number generator
-    class SeededRandom {
-      constructor(seed) {
-        this.seed = Math.abs(seed) || 1;
-      }
-
-      next() {
-        this.seed = (this.seed * 9301 + 49297) % 233280;
-        return this.seed / 233280;
-      }
-
-      range(min, max) {
-        if (min >= max) return min;
-        return min + Math.floor(this.next() * (max - min));
-      }
-    }
-
-    // 2D tilemap
-    class Tilemap {
-      constructor(width, height) {
-        this.width = width;
-        this.height = height;
-        this.tiles = new Array(width * height);
-        for (let i = 0; i < this.tiles.length; i++) {
-          this.tiles[i] = TILE.WALL;
+    // Basit Random Generator
+    function Random(seed) {
+      return {
+        seed: seed,
+        next() {
+          this.seed = (this.seed * 9301 + 49297) % 233280;
+          return this.seed / 233280;
+        },
+        range(min, max) {
+          return Math.floor(this.next() * (max - min)) + min;
         }
-      }
-
-      get(x, y) {
-        if (x < 0 || x >= this.width || y < 0 || y >= this.height) return TILE.WALL;
-        return this.tiles[y * this.width + x];
-      }
-
-      set(x, y, tile) {
-        if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
-          this.tiles[y * this.width + x] = tile;
-        }
-      }
+      };
     }
 
-    // Generate dungeon chunk
-    function generateChunk(chunkX, chunkY) {
-      const width = 64;
-      const height = 64;
-      const tilemap = new Tilemap(width, height);
+    // Harita oluştur
+    function generateMap() {
+      const width = 50;
+      const height = 30;
       
-      const seed = 987654321 + (chunkX * 73856093) ^ (chunkY * 19349663);
-      const rng = new SeededRandom(seed);
-
-      // Fill with random walls and floors
+      // Haritayı duvarlarla doldur
+      let map = [];
       for (let y = 0; y < height; y++) {
+        map[y] = [];
         for (let x = 0; x < width; x++) {
-          const rand = rng.next();
-          if (rand < 0.4) {
-            tilemap.set(x, y, TILE.FLOOR);
-          } else if (rand < 0.55) {
-            tilemap.set(x, y, TILE.ROOM);
-          } else {
-            tilemap.set(x, y, TILE.WALL);
-          }
+          map[y][x] = '#';
         }
       }
 
-      // Generate rectangular rooms
-      for (let i = 0; i < 6; i++) {
-        const roomWidth = rng.range(5, 12);
-        const roomHeight = rng.range(5, 12);
+      // Random generator
+      const rng = Random(Date.now());
+
+      // Rastgele odalar oluştur
+      const roomCount = rng.range(5, 10);
+      const rooms = [];
+
+      for (let i = 0; i < roomCount; i++) {
+        const roomWidth = rng.range(6, 14);
+        const roomHeight = rng.range(4, 10);
         const roomX = rng.range(2, width - roomWidth - 2);
         const roomY = rng.range(2, height - roomHeight - 2);
 
-        for (let dy = 0; dy < roomHeight; dy++) {
-          for (let dx = 0; dx < roomWidth; dx++) {
-            tilemap.set(roomX + dx, roomY + dy, TILE.ROOM);
+        rooms.push({
+          x: roomX,
+          y: roomY,
+          width: roomWidth,
+          height: roomHeight
+        });
+
+        // Odayı haritaya çiz
+        for (let y = roomY; y < roomY + roomHeight; y++) {
+          for (let x = roomX; x < roomX + roomWidth; x++) {
+            map[y][x] = '█';
           }
         }
       }
 
-      // Add corridors between rooms
-      for (let i = 0; i < 15; i++) {
-        const x1 = rng.range(0, width);
-        const y1 = rng.range(0, height);
-        const x2 = rng.range(0, width);
-        const y2 = rng.range(0, height);
+      // Odaları birbirine bağla (koridorlar)
+      for (let i = 0; i < rooms.length - 1; i++) {
+        const room1 = rooms[i];
+        const room2 = rooms[i + 1];
 
-        // Draw corridor
-        let x = x1;
-        let y = y1;
-        const dx = x2 > x1 ? 1 : (x2 < x1 ? -1 : 0);
-        const dy = y2 > y1 ? 1 : (y2 < y1 ? -1 : 0);
+        const x1 = Math.floor(room1.x + room1.width / 2);
+        const y1 = Math.floor(room1.y + room1.height / 2);
+        const x2 = Math.floor(room2.x + room2.width / 2);
+        const y2 = Math.floor(room2.y + room2.height / 2);
 
-        while (x !== x2) {
-          tilemap.set(x, y, TILE.CORRIDOR);
-          x += dx;
+        // Yatay çizgi
+        const startX = Math.min(x1, x2);
+        const endX = Math.max(x1, x2);
+        for (let x = startX; x <= endX; x++) {
+          if (map[y1][x] === '#') {
+            map[y1][x] = '+';
+          }
         }
-        while (y !== y2) {
-          tilemap.set(x, y, TILE.CORRIDOR);
-          y += dy;
+
+        // Dikey çizgi
+        const startY = Math.min(y1, y2);
+        const endY = Math.max(y1, y2);
+        for (let y = startY; y <= endY; y++) {
+          if (map[y][x2] === '#') {
+            map[y][x2] = '+';
+          }
         }
       }
 
-      // Add some gateways
-      for (let i = 0; i < 3; i++) {
-        const x = rng.range(10, width - 10);
-        const y = rng.range(10, height - 10);
-        tilemap.set(x, y, TILE.GATEWAY);
+      // Zemin ekle
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          if (map[y][x] === '#' && rng.next() < 0.3) {
+            map[y][x] = '.';
+          }
+        }
       }
 
-      return tilemap;
+      // Giriş noktası ekle
+      if (rooms.length > 0) {
+        const firstRoom = rooms[0];
+        const entryX = Math.floor(firstRoom.x + firstRoom.width / 2);
+        const entryY = Math.floor(firstRoom.y + firstRoom.height / 2);
+        map[entryY][entryX] = '@';
+      }
+
+      // Haritayı ekrana yazdır
+      let mapString = '';
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          mapString += map[y][x];
+        }
+        mapString += '\n';
+      }
+
+      document.getElementById('mapOutput').textContent = mapString;
     }
 
-    function printTilemap(tilemap) {
-      let output = "";
-      for (let y = 0; y < tilemap.height; y++) {
-        let row = "";
-        for (let x = 0; x < tilemap.width; x++) {
-          row += tileToChar(tilemap.get(x, y));
-        }
-        output += row + "\n";
-      }
-      return output;
-    }
-
-    function generateAndDisplay() {
-      try {
-        console.log("Generating dungeon...");
-        const chunkX = Math.floor(Math.random() * 10000);
-        const chunkY = Math.floor(Math.random() * 10000);
-        const tilemap = generateChunk(chunkX, chunkY);
-        const output = printTilemap(tilemap);
-        document.getElementById('output').textContent = output;
-        console.log("Dungeon generated successfully!");
-      } catch (error) {
-        console.error("Error generating dungeon:", error);
-        document.getElementById('output').textContent = "ERROR: " + error.message;
-      }
-    }
-
-    // Generate initial dungeon when page loads
-    console.log("Page loaded, generating initial dungeon...");
-    generateAndDisplay();
+    // Sayfa yüklendiğinde ilk haritayı oluştur
+    window.addEventListener('load', generateMap);
   </script>
 </body>
 </html>
